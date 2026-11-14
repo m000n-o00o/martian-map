@@ -1,3 +1,4 @@
+# Written with assistance from Claude (AI); reviewed and run by the team.
 import csv
 import json
 from pathlib import Path
