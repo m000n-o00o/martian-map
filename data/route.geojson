@@ -38,6 +38,23 @@
     {
       "type": "Feature",
       "geometry": {
+        "type": "Point",
+        "coordinates": [
+          77.28775,
+          18.4951
+        ]
+      },
+      "properties": {
+        "order": 3,
+        "name": "Western Breach",
+        "type": "science",
+        "description": "Description here",
+        "image": null
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
         "type": "LineString",
         "coordinates": [
           [
@@ -47,6 +64,10 @@
           [
             77.365,
             18.50506
+          ],
+          [
+            77.28775,
+            18.4951
           ]
         ]
       },
