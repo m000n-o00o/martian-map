@@ -23,12 +23,29 @@
       "geometry": {
         "type": "Point",
         "coordinates": [
+          77.42846,
+          18.46436
+        ]
+      },
+      "properties": {
+        "order": 2,
+        "name": "Delta Front Climb",
+        "type": "hazard",
+        "description": "Description here",
+        "image": null
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
           77.365,
           18.50506
         ]
       },
       "properties": {
-        "order": 2,
+        "order": 3,
         "name": "Western Delta Deposit",
         "type": "science",
         "description": "Description here",
@@ -45,7 +62,7 @@
         ]
       },
       "properties": {
-        "order": 3,
+        "order": 4,
         "name": "Western Breach",
         "type": "science",
         "description": "Description here",
@@ -60,6 +77,10 @@
           [
             77.45632,
             18.44635
+          ],
+          [
+            77.42846,
+            18.46436
           ],
           [
             77.365,
