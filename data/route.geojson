@@ -1,0 +1,100 @@
+{
+  "type": "FeatureCollection",
+  "features": [
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          77.45632,
+          18.44635
+        ]
+      },
+      "properties": {
+        "order": 1,
+        "name": "Perseverance Landing Ellipse",
+        "type": "start",
+        "description": "Description here",
+        "image": null
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          77.365,
+          18.50506
+        ]
+      },
+      "properties": {
+        "order": 2,
+        "name": "Western Delta Deposit",
+        "type": "science",
+        "description": "Description here",
+        "image": null
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          77.28775,
+          18.4951
+        ]
+      },
+      "properties": {
+        "order": 3,
+        "name": "Western Breach",
+        "type": "science",
+        "description": "Description here",
+        "image": null
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          77.20295,
+          18.58024
+        ]
+      },
+      "properties": {
+        "order": 4,
+        "name": "Western Inflow Channel",
+        "type": "hazard",
+        "description": "Description here",
+        "image": null
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [
+            77.45632,
+            18.44635
+          ],
+          [
+            77.365,
+            18.50506
+          ],
+          [
+            77.28775,
+            18.4951
+          ],
+          [
+            77.20295,
+            18.58024
+          ]
+        ]
+      },
+      "properties": {
+        "name": "Marswalk route"
+      }
+    }
+  ]
+}

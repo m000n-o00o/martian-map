@@ -1,0 +1,5 @@
+order,name,lat,lon,type,description,image
+1,Perseverance Landing Ellipse,18.44635,77.45632,start,Description here,
+2,Western Delta Deposit,18.50506,77.36500,science,Description here,
+3,Western Breach,18.49510,77.28775,science,Description here,
+4,Western Inflow Channel,18.58024,77.20295,hazard,Description here,
