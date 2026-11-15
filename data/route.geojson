@@ -15,7 +15,7 @@
         "name": "Perseverance Landing Ellipse",
         "type": "start",
         "description": "This flat stretch of crater floor is where NASA's Perseverance rover landed on February 18, 2021, at a site now called Octavia E. Butler Landing. The ground is made of volcanic rock rich in olivine and pyroxene. It is a safe, well-studied place to begin the walk.",
-        "image": null
+        "image": "https://mars.nasa.gov/mars2020-raw-images/pub/ods/surface/sol/00002/ids/edr/browse/ncam/NLE_0002_0667130699_601ECM_N0010052AUT_04096_00_0LLJ01_800.jpg"
       }
     },
     {
@@ -49,7 +49,7 @@
         "name": "Western Delta Deposit",
         "type": "science",
         "description": "Around 3.5 billion years ago, a river flowed into a lake inside Jezero and built this fan-shaped delta. Its layered rocks hold clays and carbonates, minerals that form in water and are good at preserving traces of ancient life. This is the most important science stop on the route.",
-        "image": null
+        "image": "https://mars.nasa.gov/mars2020-raw-images/pub/ods/surface/sol/00316/ids/edr/browse/zcam/ZR0_0316_0694986408_331EBY_N0090000ZCAM03291_1100LMJ01_800.jpg"
       }
     },
     {
