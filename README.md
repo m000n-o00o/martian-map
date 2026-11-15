@@ -36,7 +36,6 @@ python3 build_route.py
 - HRSC on ESA Mars Express (ESA/DLR/FU Berlin)
 
 ## Team
-## Team
 - Sarah Al-Ghamdi: Data Science (data processing, route data, repository)
 - Rahma Alsharif: Human-Computer Interaction (design, content, presentation)
 - Reham Wan Deraman: Computer Science (map development)
