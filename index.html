@@ -30,8 +30,10 @@
   .leaflet-popup-content h3 { margin:0 0 4px; font-size:1rem; }
   .legend { background:rgba(42,28,23,.92); color:var(--ink); padding:8px 10px; border-radius:6px;
             font-size:.75rem; line-height:1.5; max-width:230px; }
-  .legend b { display:block; margin-bottom:4px; }
-  .legend i { display:inline-block; width:12px; height:12px; margin-inline-end:6px; vertical-align:-2px; border-radius:2px; }
+    .legend b { display:block; margin-bottom:4px; }
+   .legend summary { cursor:pointer; }
+   .legend summary b { display:inline; }
+   .legend i { display:inline-block; width:12px; height:12px; margin-inline-end:6px; vertical-align:-2px; border-radius:2px; }
   #msg { color:#ffb199; font-size:.85rem; }
   @media (max-width:700px) {
     html, body { height:auto; }
@@ -126,7 +128,8 @@ map.createPane('struct'); map.getPane('struct').style.zIndex = 420;
 map.createPane('route');  map.getPane('route').style.zIndex = 450;
 
 const layers = L.control.layers({}, {}, { collapsed: true, position: 'topleft' }).addTo(map);
-L.control.scale({ imperial: false }).addTo(map);
+// True on small screens (same breakpoint as the CSS)
+const isMobile = window.matchMedia('(max-width:700px)').matches;
 
 // High-res layer on top of the basemap (only where Mars Trek has coverage)
 if (CONFIG.hiRes.url) {
@@ -164,9 +167,12 @@ getJSON('geology.geojson').then(d => {
   const units = Object.keys(CONFIG.unitColors).filter(u => u in desc);
   const legend = L.control({ position: 'bottomleft' });
   legend.onAdd = () => {
-    const div = L.DomUtil.create('div', 'legend');
-    div.innerHTML = '<b>Geologic units (oldest to youngest)</b>' +
+        // Collapsible legend: open on desktop, collapsed on phones
+    const div = L.DomUtil.create('details', 'legend');
+    if (!isMobile) div.open = true;
+    div.innerHTML = '<summary><b>Geologic units (oldest to youngest)</b></summary>' +
       units.map(u => `<div><i style="background:${colorOf(u)}"></i>${u}: ${desc[u]}</div>`).join('');
+    L.DomEvent.disableClickPropagation(div);
     return div;
   };
   // Show the legend only while the geology layer is on
@@ -210,14 +216,19 @@ getJSON('route.geojson').then(d => {
       html: `<div class="pin" style="background:${CONFIG.typeColors[f.properties.type] ?? '#888'}"></div>` }) }),
     onEachFeature: (f, l) => {
       const p = f.properties;
-      l.bindPopup(`<h3>${p.name ?? ''}</h3><p>${p.description ?? ''}</p>`);
-      l.on('click', () => showPoint(p, l.getElement()?.firstChild));
+      // On phones, skip the popup and scroll to the info panel below the map
+      if (!isMobile) l.bindPopup(`<h3>${p.name ?? ''}</h3><p>${p.description ?? ''}</p>`);
+      l.on('click', () => {
+        showPoint(p, l.getElement()?.firstChild);
+        if (isMobile) document.getElementById('info').scrollIntoView({ behavior: 'smooth' });
+      });
     }
   });
   route.addTo(map); stops.addTo(map);
   layers.addOverlay(route, 'Path line'); layers.addOverlay(stops, 'Points');
   map.fitBounds(L.featureGroup([route, stops]).getBounds().pad(0.3));
 }).catch(fail);
+
 
 // ===== 3) Elevation profile (Chart.js) =====
 // Reads a simple comma-separated CSV; columns come from CONFIG or are detected from headers
