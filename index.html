@@ -1,12 +1,193 @@
+<!-- Written with assistance from AI; reviewed by the team. -->
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Martian Map</title>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Martian Map</title>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.css">
+<style>
+  /* ألوان وخطوط مؤقتة: قرار التصميم لفريق HCI */
+  :root { --bg:#1d1411; --panel:#2a1c17; --ink:#f1e3d3; --muted:#b9a08c; --line:#4a342b;
+          --start:#3fae6a; --science:#4aa3e0; --hazard:#e5533d; }
+  * { box-sizing:border-box; }
+  html, body { height:100%; margin:0; background:var(--bg); color:var(--ink);
+               font-family:"Segoe UI", Tahoma, "Noto Sans Arabic", sans-serif; }
+  main { height:100%; display:flex; }
+  #map { flex:1; min-width:0; background:#000; direction:ltr; }
+  aside { width:340px; padding:14px; background:var(--panel); border-inline-start:1px solid var(--line);
+          overflow:auto; display:flex; flex-direction:column; gap:10px; }
+  aside h2 { margin:0; font-size:1.05rem; }
+  .tag { display:inline-block; padding:1px 8px; border-radius:10px; color:#fff; font-size:.75rem; }
+  #info p { margin:6px 0; line-height:1.55; }
+  #photo { width:100%; border-radius:6px; display:none; }
+  .chart-box { position:relative; height:190px; }
+  .hint { color:var(--muted); font-size:.85rem; }
+  .pin { width:20px; height:20px; border-radius:50%; border:3px solid #fff; box-shadow:0 0 0 2px rgba(0,0,0,.5); }
+  .pin.active { transform:scale(1.35); }
+  .leaflet-popup-content { direction:ltr; font-family:inherit; }
+  .leaflet-popup-content h3 { margin:0 0 4px; font-size:1rem; }
+  #msg { color:#ffb199; font-size:.85rem; }
+  @media (max-width:700px) {
+    main { flex-direction:column; }
+    #map { flex:none; height:55%; }
+    aside { width:100%; flex:1; border-inline-start:0; border-top:1px solid var(--line); }
+    .chart-box { height:160px; }
+  }
+</style>
 </head>
 <body>
-  <!-- Placeholder page; replaced later by the Leaflet map -->
-  <h1>Martian Map - coming soon</h1>
+<main>
+  <div id="map"></div>
+  <aside>
+    <section id="info">
+      <h2 id="p-name">Choose a point from the map</h2>
+      <span id="p-type" class="tag" hidden></span>
+      <p id="p-desc" class="hint"></p>
+      <img id="photo" alt="">
+    </section>
+    <section>
+      <h2>Elevation profile along route</h2>
+      <div class="chart-box"><canvas id="elev"></canvas></div>
+    </section>
+    <div id="msg"></div>
+  </aside>
+</main>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<script>
+// Written with assistance from AI; reviewed by the team.
+
+// ===== إعدادات يعدّلها الفريق =====
+const CONFIG = {
+  center: [18.45, 77.5],            // [خط عرض, خط طول]
+  zoom: 7,
+  // عناوين أنواع النقاط (نص مؤقت: غيّروه لصياغة الفريق)
+  typeLabels: { start: 'Start', science: 'Science target', hazard: 'Hazard' },
+  typeColors: { start: '#3fae6a', science: '#4aa3e0', hazard: '#e5533d' },
+  // ملفات الارتفاع بالترتيب على المسار. نصيحة: حدّدوا أسماء الأعمدة إذا اختلف الاكتشاف التلقائي
+  elevationFiles: [
+    { file: 'elevation_start_to_delta.csv',  label: 'start to delta', distCol: 'Distance', elevCol: 'MGS MOLA: Global DEM' },
+    { file: 'elevation_delta_to_breach.csv', label: 'delta to breach',  distCol: 'Distance', elevCol: 'MGS MOLA: Global DEM' }
+  ]
+};
+
+// ===== 1) الخريطة والـ CRS =====
+// إحداثيات خط الطول والعرض العادية للمريخ: EPSG:4326 (بدون تحويل للـ GeoJSON)
+const map = L.map('map', { crs: L.CRS.EPSG4326, center: CONFIG.center, zoom: CONFIG.zoom, minZoom: 1, maxZoom: 11 });
+
+// طبقة Mars Trek. zoomOffset -1 لأن المستوى 0 عند Trek بلاطتين عرضًا
+L.tileLayer('https://trek.nasa.gov/tiles/Mars/EQ/Mars_Viking_MDIM21_ClrMosaic_global_232m/1.0.0//default/default028mm/{z}/{y}/{x}.jpg', {
+  tileSize: 256, maxNativeZoom: 7, noWrap: true,
+  attribution: 'Imagery: NASA/JPL/USGS (Mars Trek)'
+}).addTo(map);
+
+map.createPane('geo');    map.getPane('geo').style.zIndex = 410;
+map.createPane('struct'); map.getPane('struct').style.zIndex = 420;
+map.createPane('route');  map.getPane('route').style.zIndex = 450;
+
+const layers = L.control.layers({}, {}, { collapsed: true }).addTo(map);
+L.control.scale({ imperial: false }).addTo(map);
+
+// ===== 2) تحميل البيانات =====
+const getJSON = f => fetch('data/' + f).then(r => { if (!r.ok) throw new Error(f); return r.json(); });
+const getText = f => fetch('data/' + f).then(r => { if (!r.ok) throw new Error(f); return r.text(); });
+const fail = e => { document.getElementById('msg').textContent =
+  'تعذر تحميل ' + (e.message || e) + '. تأكدوا من مسار data وشغّلوا الصفحة عبر سيرفر محلي.'; };
+
+// --- الجيولوجيا (ألوان حسب Unit) ---
+const palette = ['#e6a23c','#b5651d','#8e5ea2','#3d9970','#d9534f','#5bc0de','#f0e442','#c2185b','#7cb342','#795548','#ff7043','#9fa8da'];
+const unitColor = {};
+const colorOf = u => unitColor[u] ?? (unitColor[u] = palette[Object.keys(unitColor).length % palette.length]);
+
+getJSON('geology.geojson').then(d => {
+  const g = L.geoJSON(d, {
+    pane: 'geo',
+    style: f => ({ color: colorOf(f.properties.Unit), weight: 1, fillColor: colorOf(f.properties.Unit), fillOpacity: 0.5 }),
+    onEachFeature: (f, l) => l.bindPopup(`<h3>${f.properties.Unit ?? ''}</h3><p>${f.properties.UnitDesc ?? ''}</p>`)
+  }).addTo(map);
+  layers.addOverlay(g, 'Geology (USGS)');
+}).catch(fail);
+
+// --- الأخاديد ---
+getJSON('structures.geojson').then(d => {
+  const s = L.geoJSON(d, { pane: 'struct', style: { color: '#fff', weight: 1.5, dashArray: '4 3' } }).addTo(map);
+  layers.addOverlay(s, 'Grooves');
+}).catch(fail);
+
+// --- المسار والنقاط ---
+const els = { type: document.getElementById('p-type'),
+              desc: document.getElementById('p-desc'), photo: document.getElementById('photo') };
+let activeEl = null;
+
+function showPoint(p, pinEl) {
+  document.getElementById('p-name').textContent = p.name ?? '';
+  els.type.hidden = false;
+  els.type.textContent = CONFIG.typeLabels[p.type] ?? p.type;
+  els.type.style.background = CONFIG.typeColors[p.type] ?? '#888';
+  els.desc.textContent = p.description ?? '';
+  els.desc.classList.remove('hint');
+  if (p.image) { els.photo.src = p.image; els.photo.alt = p.name ?? ''; els.photo.style.display = 'block'; }
+  else { els.photo.style.display = 'none'; }
+  if (activeEl) activeEl.classList.remove('active');
+  activeEl = pinEl; if (pinEl) pinEl.classList.add('active');
+}
+
+getJSON('route.geojson').then(d => {
+  const route = L.geoJSON(d, { pane: 'route', filter: f => f.geometry.type !== 'Point',
+                               style: { color: '#ffd166', weight: 3 } });
+  const stops = L.geoJSON(d, {
+    pane: 'route',
+    filter: f => f.geometry.type === 'Point',
+    pointToLayer: (f, ll) => L.marker(ll, { pane: 'route', icon: L.divIcon({
+      className: '', iconSize: [20, 20],
+      html: `<div class="pin" style="background:${CONFIG.typeColors[f.properties.type] ?? '#888'}"></div>` }) }),
+    onEachFeature: (f, l) => {
+      const p = f.properties;
+      l.bindPopup(`<h3>${p.name ?? ''}</h3><p>${p.description ?? ''}</p>`);
+      l.on('click', () => showPoint(p, l.getElement()?.firstChild));
+    }
+  });
+  route.addTo(map); stops.addTo(map);
+  layers.addOverlay(route, 'Path line'); layers.addOverlay(stops, 'Points');
+  map.fitBounds(L.featureGroup([route, stops]).getBounds().pad(0.3));
+}).catch(fail);
+
+// ===== 3) مقطع الارتفاع (Chart.js) =====
+// يقرأ CSV بسيط (فاصلة). يكتشف عمود المسافة والارتفاع من العناوين، أو من الإعدادات أعلاه
+function parseCSV(text, distCol, elevCol) {
+  const rows = text.trim().split(/\r?\n/).map(r => r.split(',').map(c => c.trim().replace(/^"|"$/g, '')));
+  const head = rows.shift();
+  let di = distCol ? head.indexOf(distCol) : head.findIndex(h => /dist|km|meter|^x$/i.test(h));
+  let ei = elevCol ? head.indexOf(elevCol) : head.findIndex(h => /elev|height|alt|^z$|^y$/i.test(h));
+  if (di < 0) di = 0;
+  if (ei < 0) ei = 1;
+  return rows.map(r => ({ x: parseFloat((r[di])/1000), y: parseFloat(r[ei]) })).filter(p => isFinite(p.x) && isFinite(p.y));
+}
+
+Promise.all(CONFIG.elevationFiles.map(e => getText(e.file).then(t => parseCSV(t, e.distCol, e.elevCol)))).then(parts => {
+  let offset = 0;
+  const datasets = parts.map((pts, i) => {
+    // إذا بدأت المسافة من الصفر في الملف الثاني، نكمل من نهاية الأول
+    const shift = (i > 0 && pts.length && pts[0].x < offset) ? offset - pts[0].x : 0;
+    const shifted = pts.map(p => ({ x: p.x + shift, y: p.y }));
+    if (shifted.length) offset = shifted[shifted.length - 1].x;
+    return { label: CONFIG.elevationFiles[i].label, data: shifted, borderWidth: 2, pointRadius: 0, tension: 0.2,
+             borderColor: i === 0 ? '#ffd166' : '#4aa3e0' };
+  });
+  new Chart(document.getElementById('elev'), {
+    type: 'line', data: { datasets },
+    options: {
+      responsive: true, maintainAspectRatio: false, parsing: false,
+      scales: {
+        x: { type: 'linear', title: { display: true, text: 'Distance(km)', color: '#b9a08c' }, ticks: { color: '#b9a08c' }, grid: { color: '#4a342b' } },
+        y: { title: { display: true, text: 'Height(m)', color: '#b9a08c' }, ticks: { color: '#b9a08c' }, grid: { color: '#4a342b' } }
+      },
+      plugins: { legend: { labels: { color: '#f1e3d3' } } }
+    }
+  });
+}).catch(fail);
+</script>
 </body>
 </html>
