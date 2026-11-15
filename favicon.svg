@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
+  <!-- Martian Map favicon: Mars with a route arc -->
+  <circle cx="32" cy="32" r="28" fill="#C1440E"/>
+  <ellipse cx="22" cy="22" rx="7" ry="4" fill="#E2683A" opacity=".8"/>
+  <ellipse cx="40" cy="42" rx="9" ry="4" fill="#9A330B" opacity=".8"/>
+  <path d="M12 40 Q 32 20 52 26" fill="none" stroke="#FFFFFF" stroke-width="4.5" stroke-linecap="round"/>
+  <circle cx="52" cy="26" r="5" fill="#FFFFFF"/>
+</svg>
